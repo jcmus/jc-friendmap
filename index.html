@@ -46,7 +46,10 @@
   <!-- 지인 추가/수정 폼 -->
   <div id="form-overlay" hidden>
     <div id="friend-form-panel">
-      <h2 id="form-title">지인 추가</h2>
+      <div id="form-header">
+        <h2 id="form-title">지인 추가</h2>
+        <button type="button" id="btn-close" title="닫기 (Esc)" aria-label="닫기">✕</button>
+      </div>
       <form id="friend-form">
         <input type="hidden" id="f-id">
         <label>성명 *<input type="text" id="f-name" required placeholder="홍길동"></label>

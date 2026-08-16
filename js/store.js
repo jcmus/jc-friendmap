@@ -59,7 +59,19 @@ function normalize(rec) {
     registeredAt: rec.registeredAt || "",
     lat: rec.lat == null ? null : Number(rec.lat),
     lng: rec.lng == null ? null : Number(rec.lng),
+    // exact / road / district / company / "" — 좌표가 얼마나 정확한지 나타낸다.
+    precision: rec.precision || "",
   };
+}
+
+/** 좌표가 정확한 주소 매칭이 아니라 근사치인 경우의 안내 문구. */
+export function precisionLabel(p) {
+  switch (p) {
+    case "road": return "대략적 위치 (도로 기준)";
+    case "district": return "대략적 위치 (구·시 기준)";
+    case "company": return "대략적 위치 (같은 회사 동료 기준)";
+    default: return "";
+  }
 }
 
 /** localStorage에서 지인 목록을 불러온다. */

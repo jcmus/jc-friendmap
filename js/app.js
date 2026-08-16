@@ -34,6 +34,7 @@ function popupHtml(f) {
     ${f.workPhone ? `<div class="pc-row">☎️ <a href="tel:${esc(f.workPhone)}">${esc(f.workPhone)}</a></div>` : ""}
     ${f.email ? `<div class="pc-row">✉️ <a href="mailto:${esc(f.email)}">${esc(f.email)}</a></div>` : ""}
     ${f.address ? `<div class="pc-row">📍 ${esc(f.address)}</div>` : ""}
+    ${store.precisionLabel(f.precision) ? `<div class="pc-approx">≈ ${esc(store.precisionLabel(f.precision))}</div>` : ""}
     <div class="pc-buttons">
       <button class="pc-btn" data-action="edit" data-id="${esc(f.id)}">✏️ 수정</button>
       <button class="pc-btn danger" data-action="delete" data-id="${esc(f.id)}">🗑 삭제</button>
@@ -78,10 +79,19 @@ function renderList() {
     if (f.lat == null) {
       const warn = document.createElement("div");
       warn.className = "fi-warn";
-      warn.textContent = "⚠️ 주소의 위치를 찾지 못했습니다 — 수정해 주세요";
+      warn.textContent = f.address
+        ? "⚠️ 지도 데이터에 이 주소가 없습니다 — 눌러서 수정"
+        : "⚠️ 주소 없음 — 눌러서 입력";
       li.appendChild(warn);
       li.addEventListener("click", () => editFriend(f.id));
     } else {
+      const label = store.precisionLabel(f.precision);
+      if (label) {
+        const approx = document.createElement("div");
+        approx.className = "fi-approx";
+        approx.textContent = "≈ " + label;
+        li.appendChild(approx);
+      }
       li.addEventListener("click", () => {
         mapView.flyToFriend(f);
         setTimeout(() => mapView.openPopup(f.id), 400);
@@ -226,8 +236,12 @@ form.addEventListener("submit", async (e) => {
 
 document.getElementById("btn-add").addEventListener("click", () => openForm(null));
 document.getElementById("btn-cancel").addEventListener("click", closeForm);
+document.getElementById("btn-close").addEventListener("click", closeForm);
 overlay.addEventListener("click", (e) => {
   if (e.target === overlay) closeForm();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !overlay.hidden) closeForm();
 });
 
 // ---------------- 내 위치 ----------------

@@ -1,12 +1,15 @@
-# 지인 지도 로컬 서버 (PowerShell HttpListener 기반 정적 파일 서버)
-# 위치(geolocation) 기능은 localhost 에서만 동작하므로 이 서버로 앱을 띄웁니다.
+# Friend Map local static file server (PowerShell HttpListener).
+# Geolocation and ES modules require http://localhost, so this server is used
+# instead of opening index.html directly from the file system.
+# NOTE: keep this file ASCII-only. Windows PowerShell 5.1 misparses UTF-8
+# scripts that have no BOM, which breaks non-ASCII characters.
 param([int]$Port = 8090)
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$Port/")
 $listener.Start()
-Write-Host "지인 지도 서버 실행 중: http://localhost:$Port/  (중지: Ctrl+C)"
+Write-Host "Friend Map server running: http://localhost:$Port/  (stop: Ctrl+C)"
 
 $mime = @{
   ".html" = "text/html; charset=utf-8"
@@ -24,7 +27,7 @@ while ($listener.IsListening) {
     $path = [System.Uri]::UnescapeDataString($ctx.Request.Url.LocalPath).TrimStart('/')
     if ([string]::IsNullOrWhiteSpace($path)) { $path = "index.html" }
     $file = Join-Path $root $path
-    # 디렉터리 탈출 방지
+    # prevent directory traversal outside the app folder
     $full = [System.IO.Path]::GetFullPath($file)
     if (-not $full.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path $full -PathType Leaf)) {
       $ctx.Response.StatusCode = 404
@@ -38,6 +41,6 @@ while ($listener.IsListening) {
     $ctx.Response.OutputStream.Write($bytes, 0, $bytes.Length)
     $ctx.Response.OutputStream.Close()
   } catch {
-    # 요청 하나가 실패해도 서버는 계속 동작
+    # a single failed request must not stop the server
   }
 }
