@@ -34,20 +34,44 @@ function buildingPopupHtml(group) {
 }
 
 function listPopupHtml(group) {
-  const place = group[0].company || group[0].address || "이 건물";
-  const rows = group
-    .map((f) => {
-      const sub = [f.title, f.department, f.company].filter(Boolean).join(" · ");
-      return `<li class="pl-item" data-action="show-person" data-id="${esc(f.id)}">
-        <span class="pl-name">${esc(f.name)}</span>
-        ${sub ? `<span class="pl-sub">${esc(sub)}</span>` : ""}
-      </li>`;
+  // 대형 빌딩에는 수십 개 회사가 입주해 있어 이름만 나열하면 읽기 어렵다.
+  // 회사별로 묶고, 인원이 많은 회사를 위로 올린다.
+  const byCompany = new Map();
+  for (const f of group) {
+    const key = f.company || "(회사 미상)";
+    if (!byCompany.has(key)) byCompany.set(key, []);
+    byCompany.get(key).push(f);
+  }
+  const companies = [...byCompany.entries()].sort((a, b) => b[1].length - a[1].length);
+  const singleCompany = companies.length === 1;
+
+  const header = singleCompany ? companies[0][0] : group[0].address || "이 건물";
+  const summary = singleCompany
+    ? `이곳에 ${group.length}명이 근무합니다 — 이름을 누르면 상세정보`
+    : `${companies.length}개 회사 ${group.length}명 — 이름을 누르면 상세정보`;
+
+  const body = companies
+    .map(([company, people]) => {
+      const items = people
+        .map((f) => {
+          const sub = [f.title, f.department].filter(Boolean).join(" · ");
+          return `<li class="pl-item" data-action="show-person" data-id="${esc(f.id)}">
+            <span class="pl-name">${esc(f.name)}</span>
+            ${sub ? `<span class="pl-sub">${esc(sub)}</span>` : ""}
+          </li>`;
+        })
+        .join("");
+      const heading = singleCompany
+        ? ""
+        : `<li class="pl-company">${esc(company)} <span class="pl-count">${people.length}</span></li>`;
+      return heading + items;
     })
     .join("");
+
   return `<div class="popup-card">
-    <div class="pc-name">${esc(place)}</div>
-    <div class="pc-role">이곳에 ${group.length}명이 근무합니다 — 이름을 누르면 상세정보</div>
-    <ul class="popup-list">${rows}</ul>
+    <div class="pc-name">${esc(header)}</div>
+    <div class="pc-role">${esc(summary)}</div>
+    <ul class="popup-list">${body}</ul>
   </div>`;
 }
 
