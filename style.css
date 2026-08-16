@@ -160,6 +160,22 @@ body {
   border: 3px solid rgba(255, 255, 255, .9);
 }
 
+/* 배경 지도 스타일 전환 버튼 */
+.fm-style {
+  display: flex; overflow: hidden;
+  border-radius: 9px; background: var(--bg);
+  box-shadow: var(--shadow-md);
+}
+.fm-style button {
+  padding: 7px 12px; border: none; cursor: pointer;
+  background: var(--bg); color: var(--text-dim);
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  border-right: 1px solid var(--border);
+}
+.fm-style button:last-child { border-right: none; }
+.fm-style button:hover { background: var(--bg-alt); color: var(--text); }
+.fm-style button.is-on { background: var(--primary); color: #fff; }
+
 /* 지도 컨트롤을 앱 톤에 맞춰 정리 */
 .leaflet-container { font-family: inherit; }
 .leaflet-bar a {
@@ -201,17 +217,28 @@ body {
 }
 .popup-card .pl-item:last-child { border-bottom: none; }
 .popup-card .pl-item:hover { background: var(--bg-alt); }
+/* 회사 구분 머리글: 어느 회사 사람인지 한눈에 들어오도록 뚜렷하게 */
 .popup-card .pl-company {
-  padding: 8px 8px 3px; font-size: 11px; font-weight: 700;
-  color: var(--text-dim); text-transform: none;
-  position: sticky; top: 0; background: var(--bg);
-  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin: 10px 0 2px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  background: var(--primary-soft);
+  border-left: 3px solid var(--primary);
+  position: sticky; top: 0; z-index: 1;
+}
+.popup-card .pl-company:first-child { margin-top: 0; }
+.popup-card .pl-company-name {
+  font-size: 12.5px; font-weight: 700; color: var(--primary-dark);
+  letter-spacing: -.01em;
 }
 .popup-card .pl-count {
-  display: inline-block; margin-left: 4px; padding: 0 5px;
-  border-radius: 8px; background: var(--bg-alt); color: var(--text-dim);
-  font-size: 10px; font-weight: 600;
+  flex: none; font-size: 11px; font-weight: 600; color: var(--primary);
+  font-variant-numeric: tabular-nums;
 }
+/* 회사별로 묶였을 때는 이름을 한 단계 들여써서 소속이 분명해지도록 */
+.popup-card .popup-list.grouped .pl-item { margin-left: 9px; }
+.popup-card.is-multi { min-width: 250px; }
 .popup-card .pl-name { display: block; font-size: 13px; font-weight: 600; }
 .popup-card .pl-sub { display: block; font-size: 11px; color: var(--text-dim); margin-top: 1px; }
 .popup-card .pc-back {

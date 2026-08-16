@@ -61,17 +61,18 @@ function listPopupHtml(group) {
           </li>`;
         })
         .join("");
-      const heading = singleCompany
-        ? ""
-        : `<li class="pl-company">${esc(company)} <span class="pl-count">${people.length}</span></li>`;
-      return heading + items;
+      if (singleCompany) return items;
+      return `<li class="pl-company">
+          <span class="pl-company-name">${esc(company)}</span>
+          <span class="pl-count">${people.length}명</span>
+        </li>${items}`;
     })
     .join("");
 
-  return `<div class="popup-card">
+  return `<div class="popup-card${singleCompany ? "" : " is-multi"}">
     <div class="pc-name">${esc(header)}</div>
     <div class="pc-role">${esc(summary)}</div>
-    <ul class="popup-list">${body}</ul>
+    <ul class="popup-list${singleCompany ? "" : " grouped"}">${body}</ul>
   </div>`;
 }
 

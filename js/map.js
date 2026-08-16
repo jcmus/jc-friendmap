@@ -12,6 +12,83 @@ let markers = {}; // 지인 id -> 그 지인이 속한 건물 마커 (같은 건
 let myLocationMarker = null;
 let currentPopup = null;
 
+// ---------------- 지도 배경 스타일 ----------------
+// {r}은 고해상도 화면에서 @2x 타일을 받아 글자·선이 흐려지지 않게 한다.
+const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+const CARTO_ATTR = OSM_ATTR + ' &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
+const BASE_STYLES = {
+  // 공원·물·도로에 색이 살아 있으면서도 정돈된 기본 스타일
+  color: {
+    label: "컬러",
+    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    options: { subdomains: "abcd", maxZoom: 20, detectRetina: true, attribution: CARTO_ATTR },
+  },
+  // 색을 최대한 뺀 담백한 지도 (마커에 집중하고 싶을 때)
+  light: {
+    label: "담백",
+    url: "https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png",
+    options: { subdomains: "abcd", maxZoom: 20, detectRetina: true, attribution: CARTO_ATTR },
+  },
+  // 실제 건물 모양을 보고 싶을 때
+  satellite: {
+    label: "위성",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    options: { maxZoom: 19, attribution: "&copy; Esri, Maxar, Earthstar Geographics" },
+  },
+};
+
+const STYLE_KEY = "friendmap.mapStyle.v1";
+let baseLayer = null;
+let currentStyle = "color";
+
+function loadPreferredStyle() {
+  const saved = localStorage.getItem(STYLE_KEY);
+  return BASE_STYLES[saved] ? saved : "color";
+}
+
+/** 배경 지도를 교체한다. 마커는 그대로 유지된다. */
+export function setBaseLayer(name) {
+  const style = BASE_STYLES[name];
+  if (!style || !map) return;
+  if (baseLayer) map.removeLayer(baseLayer);
+  baseLayer = L.tileLayer(style.url, style.options).addTo(map);
+  baseLayer.bringToBack();
+  currentStyle = name;
+  localStorage.setItem(STYLE_KEY, name);
+  const box = document.querySelector(".fm-style");
+  if (box) {
+    box.querySelectorAll("button").forEach((b) => {
+      b.classList.toggle("is-on", b.dataset.style === name);
+    });
+  }
+}
+
+/** 지도 위에 배경 스타일 전환 버튼을 올린다. */
+function addStyleControl() {
+  const Ctl = L.Control.extend({
+    options: { position: "topright" },
+    onAdd() {
+      const box = L.DomUtil.create("div", "fm-style");
+      box.innerHTML = Object.entries(BASE_STYLES)
+        .map(
+          ([key, s]) =>
+            `<button type="button" data-style="${key}" class="${
+              key === currentStyle ? "is-on" : ""
+            }">${s.label}</button>`
+        )
+        .join("");
+      L.DomEvent.disableClickPropagation(box);
+      box.addEventListener("click", (e) => {
+        const btn = e.target.closest("button");
+        if (btn) setBaseLayer(btn.dataset.style);
+      });
+      return box;
+    },
+  });
+  map.addControl(new Ctl());
+}
+
 /** 같은 좌표(=같은 건물)를 하나로 묶기 위한 키. */
 function locationKey(f) {
   return f.lat.toFixed(6) + "," + f.lng.toFixed(6);
@@ -66,15 +143,8 @@ function clusterIcon(cluster) {
 export function initMap(elementId) {
   map = L.map(elementId).setView([37.5665, 126.978], 12);
 
-  // CARTO Positron: 색이 절제된 밝은 지도라 마커가 훨씬 또렷하게 보인다.
-  // {r}은 고해상도 화면에서 @2x 타일을 받아 글자·선이 흐려지지 않게 한다.
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png", {
-    subdomains: "abcd",
-    maxZoom: 20,
-    detectRetina: true,
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  }).addTo(map);
+  setBaseLayer(loadPreferredStyle());
+  addStyleControl();
 
   markerLayer = L.markerClusterGroup({
     maxClusterRadius: 50,
