@@ -17,22 +17,48 @@ function locationKey(f) {
   return f.lat.toFixed(6) + "," + f.lng.toFixed(6);
 }
 
-/** 건물 하나를 나타내는 아이콘. 2명 이상이면 인원수 배지를 함께 표시한다. */
+/**
+ * 건물 하나를 나타내는 아이콘.
+ * 이모지 대신 SVG/CSS로 그려서 어떤 기기·배율에서도 또렷하게 보이도록 한다.
+ * 1명이면 위치를 정확히 가리키는 핀, 2명 이상이면 인원수를 담은 원형으로 표시한다.
+ */
 function buildingIcon(count) {
-  const badge =
-    count > 1
-      ? `<span style="position:absolute;top:-6px;right:-8px;min-width:16px;height:16px;
-           padding:0 4px;border-radius:9px;background:#2563eb;color:#fff;
-           font-size:11px;font-weight:700;line-height:16px;text-align:center;
-           box-shadow:0 1px 3px rgba(0,0,0,.4)">${count}</span>`
-      : "";
+  if (count > 1) {
+    const size = count >= 100 ? 40 : count >= 10 ? 34 : 30;
+    return L.divIcon({
+      className: "fm-marker",
+      html: `<div class="fm-group" style="width:${size}px;height:${size}px;font-size:${
+        count >= 100 ? 12 : 13
+      }px">${count}</div>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      popupAnchor: [0, -(size / 2) - 2],
+    });
+  }
   return L.divIcon({
-    className: "",
-    html: `<div style="position:relative;font-size:28px;line-height:28px;
-             filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))">🏢${badge}</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 26],
-    popupAnchor: [0, -24],
+    className: "fm-marker",
+    html: `<svg class="fm-pin" width="24" height="32" viewBox="0 0 24 32" aria-hidden="true">
+        <path d="M12 0C5.4 0 0 5.4 0 12c0 8.4 10.5 18.6 11.2 19.3a1.1 1.1 0 0 0 1.6 0C13.5 30.6 24 20.4 24 12 24 5.4 18.6 0 12 0z"/>
+        <circle cx="12" cy="12" r="4.6"/>
+      </svg>`,
+    iconSize: [24, 32],
+    iconAnchor: [12, 31],
+    popupAnchor: [0, -30],
+  });
+}
+
+/** 여러 건물이 뭉쳤을 때의 클러스터 아이콘 (기본 초록·노랑·빨강 대신 통일된 색). */
+function clusterIcon(cluster) {
+  const n = cluster.getChildCount();
+  const size = n >= 500 ? 52 : n >= 100 ? 46 : n >= 20 ? 40 : 36;
+  const label = n >= 1000 ? Math.round(n / 100) / 10 + "천" : n;
+  return L.divIcon({
+    className: "fm-marker",
+    html: `<div class="fm-cluster" style="width:${size}px;height:${size}px;font-size:${
+      n >= 1000 ? 12 : 13
+    }px">${label}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   });
 }
 
@@ -40,15 +66,22 @@ function buildingIcon(count) {
 export function initMap(elementId) {
   map = L.map(elementId).setView([37.5665, 126.978], 12);
 
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  // CARTO Positron: 색이 절제된 밝은 지도라 마커가 훨씬 또렷하게 보인다.
+  // {r}은 고해상도 화면에서 @2x 타일을 받아 글자·선이 흐려지지 않게 한다.
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png", {
+    subdomains: "abcd",
+    maxZoom: 20,
+    detectRetina: true,
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
   }).addTo(map);
 
   markerLayer = L.markerClusterGroup({
     maxClusterRadius: 50,
     spiderfyOnMaxZoom: true,
     chunkedLoading: true, // 수천 개 마커를 끊어서 추가해 렌더링이 멈추지 않도록 함
+    iconCreateFunction: clusterIcon,
+    showCoverageOnHover: false, // 마우스를 올릴 때 나타나는 다각형이 지도를 어지럽혀 끔
   });
   map.addLayer(markerLayer);
 

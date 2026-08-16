@@ -1,21 +1,31 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
+  --primary: #1d4ed8;
+  --primary-dark: #1e40af;
+  --primary-soft: #eff4ff;
   --bg: #ffffff;
-  --bg-alt: #f4f6fa;
-  --border: #e2e8f0;
-  --text: #1e293b;
-  --text-dim: #64748b;
+  --bg-alt: #f6f8fb;
+  --border: #e5e9f0;
+  --border-strong: #cbd5e1;
+  --text: #0f172a;
+  --text-dim: #667085;
   --danger: #dc2626;
-  --ok: #16a34a;
+  --ok: #15803d;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
+  --shadow-md: 0 4px 14px rgba(15, 23, 42, .10);
+  --shadow-lg: 0 18px 44px rgba(15, 23, 42, .18);
 }
 
 html, body, #app { height: 100%; }
 body {
-  font-family: "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, -apple-system, sans-serif;
   color: var(--text);
+  background: var(--bg);
+  /* 한글이 흐릿하게 번지지 않도록 렌더링을 또렷하게 고정한다 */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "tnum";
 }
 
 #app { display: flex; }
@@ -33,29 +43,37 @@ body {
 }
 
 #sidebar-header {
-  padding: 16px;
+  padding: 18px 18px 14px;
   border-bottom: 1px solid var(--border);
 }
-#sidebar-header h1 { font-size: 20px; }
-.subtitle { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+#sidebar-header h1 { font-size: 19px; letter-spacing: -.02em; }
+.subtitle { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
 
 #toolbar { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
 .toolbar-row { display: flex; gap: 6px; }
 
 .btn {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
   background: var(--bg);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13.5px;
+  font-weight: 500;
   font-family: inherit;
-  transition: background .15s;
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  transition: background .15s, border-color .15s;
 }
-.btn:hover { background: var(--bg-alt); }
-.btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
-.btn-primary:hover { background: var(--primary-dark); }
-.btn-small { flex: 1; padding: 6px 4px; font-size: 12px; }
+.btn:hover { background: var(--bg-alt); border-color: var(--text-dim); }
+.btn:active { background: var(--border); }
+.btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.btn-primary {
+  background: var(--primary); color: #fff; border-color: var(--primary);
+  font-weight: 600;
+}
+.btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+.btn-small { flex: 1; padding: 7px 4px; font-size: 12px; font-weight: 500; }
 
 #import-status {
   margin: 0 16px 8px;
@@ -70,11 +88,20 @@ body {
 #search-box { padding: 0 16px 8px; }
 #search {
   width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 9px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  font-size: 13.5px;
   font-family: inherit;
+  color: var(--text);
+  background: var(--bg-alt);
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+#search::placeholder { color: var(--text-dim); }
+#search:focus {
+  outline: none; background: var(--bg);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
 #friend-list {
@@ -84,14 +111,17 @@ body {
   border-top: 1px solid var(--border);
 }
 .friend-item {
-  padding: 10px 16px;
+  padding: 11px 18px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
-  transition: background .15s;
+  border-left: 3px solid transparent;
+  transition: background .12s, border-left-color .12s;
 }
-.friend-item:hover { background: var(--bg-alt); }
-.friend-item .fi-name { font-weight: 600; font-size: 14px; }
-.friend-item .fi-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.friend-item:hover { background: var(--bg-alt); border-left-color: var(--primary); }
+.friend-item .fi-name { font-weight: 600; font-size: 13.5px; letter-spacing: -.01em; }
+.friend-item .fi-sub {
+  font-size: 12px; color: var(--text-dim); margin-top: 3px; line-height: 1.4;
+}
 .friend-item .fi-warn { font-size: 11px; color: var(--danger); margin-top: 2px; }
 .friend-item .fi-approx { font-size: 11px; color: #b45309; margin-top: 2px; }
 
@@ -106,13 +136,57 @@ body {
 }
 
 /* ---------- 지도 ---------- */
-#map { flex: 1; height: 100%; }
+#map { flex: 1; height: 100%; background: #eaeef3; }
+
+/* 마커: 이모지 대신 SVG/CSS로 그려 어떤 배율에서도 또렷하게 */
+.fm-marker { background: none; border: none; }
+
+.fm-pin path { fill: var(--primary); }
+.fm-pin circle { fill: #fff; }
+.fm-pin { filter: drop-shadow(0 2px 3px rgba(15, 23, 42, .3)); display: block; }
+
+.fm-group, .fm-cluster {
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; color: #fff; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, .3);
+}
+.fm-group {
+  background: var(--primary);
+  border: 2.5px solid #fff;
+}
+.fm-cluster {
+  background: rgba(29, 78, 216, .92);
+  border: 3px solid rgba(255, 255, 255, .9);
+}
+
+/* 지도 컨트롤을 앱 톤에 맞춰 정리 */
+.leaflet-container { font-family: inherit; }
+.leaflet-bar a {
+  border-radius: 0; color: var(--text); border-bottom-color: var(--border);
+}
+.leaflet-bar a:first-child { border-radius: 8px 8px 0 0; }
+.leaflet-bar a:last-child { border-radius: 0 0 8px 8px; }
+.leaflet-bar { border: none; box-shadow: var(--shadow-md); border-radius: 8px; }
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, .8); font-size: 10px; color: var(--text-dim);
+}
+.leaflet-control-attribution a { color: var(--text-dim); }
 
 /* ---------- 팝업 ---------- */
-.popup-card { min-width: 200px; }
-.popup-card .pc-name { font-size: 15px; font-weight: 700; }
-.popup-card .pc-role { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
-.popup-card .pc-row { font-size: 13px; margin: 3px 0; }
+.leaflet-popup-content-wrapper {
+  border-radius: 12px; box-shadow: var(--shadow-lg); padding: 2px;
+}
+.leaflet-popup-content { margin: 12px 14px; line-height: 1.45; }
+.leaflet-popup-tip { box-shadow: none; }
+.leaflet-container a.leaflet-popup-close-button {
+  width: 26px; height: 26px; font-size: 18px; padding: 4px 0 0 0; color: var(--text-dim);
+}
+
+.popup-card { min-width: 210px; }
+.popup-card .pc-name { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+.popup-card .pc-role { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+.popup-card .pc-row { font-size: 13px; margin: 4px 0; }
 .popup-card .pc-row a { color: var(--primary); text-decoration: none; }
 .popup-card .pc-approx { font-size: 11px; color: #b45309; margin-top: 4px; }
 
