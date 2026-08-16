@@ -115,6 +115,26 @@ body {
 .popup-card .pc-row { font-size: 13px; margin: 3px 0; }
 .popup-card .pc-row a { color: var(--primary); text-decoration: none; }
 .popup-card .pc-approx { font-size: 11px; color: #b45309; margin-top: 4px; }
+
+/* 같은 건물에 여러 명이 있을 때 보여주는 명단 */
+.popup-card .popup-list {
+  list-style: none; margin: 6px 0 0; padding: 0;
+  max-height: 240px; overflow-y: auto;
+}
+.popup-card .pl-item {
+  padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.popup-card .pl-item:last-child { border-bottom: none; }
+.popup-card .pl-item:hover { background: var(--bg-alt); }
+.popup-card .pl-name { display: block; font-size: 13px; font-weight: 600; }
+.popup-card .pl-sub { display: block; font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+.popup-card .pc-back {
+  display: block; width: 100%; margin-bottom: 8px; padding: 5px 8px;
+  border: 1px solid var(--border); border-radius: 6px; background: var(--bg-alt);
+  font-size: 12px; font-family: inherit; color: var(--text); cursor: pointer; text-align: left;
+}
+.popup-card .pc-back:hover { background: var(--border); }
 .popup-card .pc-buttons { margin-top: 8px; display: flex; gap: 6px; }
 .popup-card .pc-btn {
   font-size: 12px; padding: 4px 10px; border-radius: 6px;

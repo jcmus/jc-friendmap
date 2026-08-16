@@ -24,10 +24,47 @@ function esc(s) {
 mapView.initMap("map");
 
 // ---------------- 팝업 HTML ----------------
-function popupHtml(f) {
+// 같은 건물에 여러 명이 있으면 먼저 이름 목록을 보여주고,
+// 이름을 누르면 그 사람의 상세정보로 바뀐다.
+
+/** 건물 마커의 기본 팝업. 1명이면 상세정보, 2명 이상이면 명단. */
+function buildingPopupHtml(group) {
+  if (group.length === 1) return personPopupHtml(group[0], null);
+  return listPopupHtml(group);
+}
+
+function listPopupHtml(group) {
+  const place = group[0].company || group[0].address || "이 건물";
+  const rows = group
+    .map((f) => {
+      const sub = [f.title, f.department, f.company].filter(Boolean).join(" · ");
+      return `<li class="pl-item" data-action="show-person" data-id="${esc(f.id)}">
+        <span class="pl-name">${esc(f.name)}</span>
+        ${sub ? `<span class="pl-sub">${esc(sub)}</span>` : ""}
+      </li>`;
+    })
+    .join("");
+  return `<div class="popup-card">
+    <div class="pc-name">${esc(place)}</div>
+    <div class="pc-role">이곳에 ${group.length}명이 근무합니다 — 이름을 누르면 상세정보</div>
+    <ul class="popup-list">${rows}</ul>
+  </div>`;
+}
+
+/**
+ * 한 사람의 상세정보 팝업.
+ * @param {object} f
+ * @param {string|null} backToId - 값이 있으면 "목록으로" 버튼을 보여준다.
+ */
+function personPopupHtml(f, backToId) {
+  return popupHtml(f, backToId);
+}
+
+function popupHtml(f, backToId) {
   const titleDept = [esc(f.title), esc(f.department)].filter(Boolean).join(" · ");
   const role = [titleDept, esc(f.company)].filter(Boolean).join(" · ");
   return `<div class="popup-card">
+    ${backToId ? `<button class="pc-back" data-action="back-to-list" data-id="${esc(backToId)}">← 이 건물의 다른 사람들</button>` : ""}
     <div class="pc-name">${esc(f.name)}</div>
     ${role ? `<div class="pc-role">${role}</div>` : ""}
     ${f.phone ? `<div class="pc-row">📞 <a href="tel:${esc(f.phone)}">${esc(f.phone)}</a></div>` : ""}
@@ -45,16 +82,40 @@ function popupHtml(f) {
 // 팝업 안의 수정/삭제 버튼은 Leaflet이 팝업을 document.body에 붙이므로
 // 이벤트 위임으로 한 번만 등록한다 (인라인 onclick + window 전역 함수 대신).
 document.addEventListener("click", (e) => {
-  const btn = e.target.closest(".pc-btn");
-  if (!btn) return;
-  const id = btn.dataset.id;
-  if (btn.dataset.action === "edit") editFriend(id);
-  else if (btn.dataset.action === "delete") deleteFriend(id);
+  const el = e.target.closest("[data-action]");
+  if (!el) return;
+  const id = el.dataset.id;
+  switch (el.dataset.action) {
+    case "edit":
+      editFriend(id);
+      break;
+    case "delete":
+      deleteFriend(id);
+      break;
+    case "show-person": {
+      // 건물 명단에서 이름을 누른 경우: 팝업을 닫지 않고 상세정보로 교체한다.
+      const f = store.getById(id);
+      if (f) mapView.setOpenPopupContent(personPopupHtml(f, id));
+      break;
+    }
+    case "back-to-list": {
+      const f = store.getById(id);
+      if (f) mapView.setOpenPopupContent(buildingPopupHtml(groupAt(f)));
+      break;
+    }
+  }
 });
+
+/** 같은 건물(동일 좌표)에 있는 지인들을 모아 반환한다. */
+function groupAt(f) {
+  if (f.lat == null) return [f];
+  const key = f.lat.toFixed(6) + "," + f.lng.toFixed(6);
+  return store.getAll().filter((x) => x.lat != null && x.lat.toFixed(6) + "," + x.lng.toFixed(6) === key);
+}
 
 // ---------------- 마커 렌더링 ----------------
 function renderMarkers() {
-  mapView.renderMarkers(store.getAll(), popupHtml);
+  mapView.renderMarkers(store.getAll(), buildingPopupHtml);
 }
 
 // ---------------- 목록 렌더링 (증분 렌더링: "더 보기") ----------------
@@ -94,7 +155,11 @@ function renderList() {
       }
       li.addEventListener("click", () => {
         mapView.flyToFriend(f);
-        setTimeout(() => mapView.openPopup(f.id), 400);
+        setTimeout(() => {
+          // 같은 건물에 동료가 있으면 상세정보를 바로 띄우되 명단으로 돌아갈 수 있게 한다.
+          const group = groupAt(f);
+          mapView.openPopup(f.id, group.length > 1 ? personPopupHtml(f, f.id) : undefined);
+        }, 400);
       });
     }
     frag.appendChild(li);
