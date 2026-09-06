@@ -43,8 +43,8 @@ jobs:
       - name: 배포할 앱 파일만 복사
         run: |
           mkdir -p _site
-          cp index.html style.css _site/
-          cp -r js _site/
+          cp index.html style.css manifest.json sw.js _site/
+          cp -r js icons _site/
           ls -laR _site
 
       - uses: actions/upload-pages-artifact@v3
