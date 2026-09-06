@@ -307,3 +307,6 @@ body {
   #sidebar { width: 100%; min-width: 0; height: 45%; order: 2; border-right: none; border-top: 1px solid var(--border); }
   #map { height: 55%; order: 1; }
 }
+
+/* 담백 스타일: 별도 타일 서버 없이 CSS로 채도를 낮춘다 */
+.fm-tiles-muted { filter: saturate(.12) brightness(1.06) contrast(.95); }

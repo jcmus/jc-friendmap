@@ -15,20 +15,20 @@ let currentPopup = null;
 // ---------------- 지도 배경 스타일 ----------------
 // {r}은 고해상도 화면에서 @2x 타일을 받아 글자·선이 흐려지지 않게 한다.
 const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-const CARTO_ATTR = OSM_ATTR + ' &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 const BASE_STYLES = {
-  // 공원·물·도로에 색이 살아 있으면서도 정돈된 기본 스타일
+  // 공원·물·도로에 색이 살아 있는 기본 스타일
   color: {
     label: "컬러",
-    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-    options: { subdomains: "abcd", maxZoom: 20, detectRetina: true, attribution: CARTO_ATTR },
+    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    options: { maxZoom: 19, attribution: OSM_ATTR },
   },
-  // 색을 최대한 뺀 담백한 지도 (마커에 집중하고 싶을 때)
+  // 같은 타일에 CSS 필터로 채도를 빼서 담백하게 만든다.
+  // 별도 타일 서버를 쓰지 않으므로 외부 서비스 정책 변경에 영향받지 않는다.
   light: {
     label: "담백",
-    url: "https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png",
-    options: { subdomains: "abcd", maxZoom: 20, detectRetina: true, attribution: CARTO_ATTR },
+    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    options: { maxZoom: 19, attribution: OSM_ATTR, className: "fm-tiles-muted" },
   },
   // 실제 건물 모양을 보고 싶을 때
   satellite: {
