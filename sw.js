@@ -8,7 +8,7 @@
  *  - 지인 정보는 localStorage에 있으므로 서비스 워커가 다룰 이유가 없다
  * ================================================================ */
 
-const VERSION = "v2";
+const VERSION = "v3";
 const SHELL_CACHE = "friendmap-shell-" + VERSION;
 
 // 앱이 뜨는 데 반드시 필요한 파일들
@@ -90,10 +90,32 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 나머지는 캐시 우선. 캐시에 없으면 받아서 채워 둔다.
+  // 우리 파일(HTML/CSS/JS/manifest)은 네트워크 우선.
+  // 캐시를 우선하면 앱을 고쳐 배포해도 설치된 기기에는 옛 코드가 계속 남는다.
+  // 받아온 것은 캐시에 갱신해 두어 오프라인에서도 최신본이 뜨게 한다.
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      (async () => {
+        try {
+          const res = await fetch(req);
+          if (res && res.ok) {
+            const cache = await caches.open(SHELL_CACHE);
+            cache.put(req, res.clone());
+          }
+          return res;
+        } catch (err) {
+          const hit = await caches.match(req, { ignoreSearch: true });
+          return hit || new Response("", { status: 504, statusText: "offline" });
+        }
+      })()
+    );
+    return;
+  }
+
+  // 외부 라이브러리는 주소에 버전이 박혀 있어 내용이 바뀌지 않으므로 캐시 우선.
   event.respondWith(
     (async () => {
-      const hit = await caches.match(req, { ignoreSearch: true });
+      const hit = await caches.match(req);
       if (hit) return hit;
       try {
         const res = await fetch(req);

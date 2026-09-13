@@ -38,7 +38,20 @@ function addDeletedSeedId(id) {
 }
 
 function persist() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(friends));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(friends));
+  } catch (err) {
+    // 저장 공간을 넘기면 브라우저가 예외를 던진다. 조용히 넘어가면 새로고침했을 때
+    // 데이터가 사라진 것처럼 보이므로, 무슨 일이 일어났는지 분명히 알린다.
+    const isQuota =
+      err && (err.name === "QuotaExceededError" || err.code === 22 || err.code === 1014);
+    throw new Error(
+      isQuota
+        ? `브라우저 저장 공간이 가득 찼습니다 (지인 ${friends.length}명). ` +
+          `일부를 삭제하거나, 필요한 지역만 나눠서 가져와 주세요.`
+        : "데이터를 저장하지 못했습니다: " + (err && err.message ? err.message : err)
+    );
+  }
 }
 
 /** 빈 필드를 채워 스키마를 통일한다 (시드/가져오기 데이터 대응). */

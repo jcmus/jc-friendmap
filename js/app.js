@@ -387,8 +387,40 @@ document.getElementById("file-input").addEventListener("change", async (e) => {
       return;
     }
 
+    const noAddress = toImport.filter((f) => !f.address).length;
+    // 주소 열을 통째로 못 읽은 경우. 그냥 넣으면 지도에 한 명도 안 뜨므로 먼저 알린다.
+    if (noAddress === toImport.length) {
+      statusEl.textContent =
+        `⚠️ ${toImport.length}명을 읽었지만 주소 열을 찾지 못했습니다.\n` +
+        `열 이름에 '주소'가 들어가야 합니다 (예: 주소, 회사주소, 지오코딩주소).\n` +
+        `'양식' 버튼으로 예시 파일을 받아 형식을 확인해 주세요.`;
+      return;
+    }
+
     // 좌표가 없는 행만 지오코딩 (Nominatim 정책상 1초에 1건)
     const needGeo = toImport.filter((f) => f.lat == null && f.address);
+
+    // 수백 건을 브라우저에서 지오코딩하면 매우 오래 걸리고 무료 서비스에 부담을 준다.
+    // PC 앱에서 '엑셀 내보내기'로 받은 파일에는 좌표가 들어 있어 즉시 표시된다.
+    if (needGeo.length > 50) {
+      const minutes = Math.ceil((needGeo.length * 1.2) / 60);
+      const ok = confirm(
+        `좌표가 없는 지인이 ${needGeo.length}명입니다.\n` +
+          `위치를 하나씩 찾아야 해서 약 ${minutes}분이 걸리고, 도중에 중단하면 처음부터 다시 해야 합니다.\n\n` +
+          `PC 앱에서 '엑셀 내보내기'로 받은 파일에는 좌표가 이미 들어 있어 기다릴 필요가 없습니다.\n\n` +
+          `그래도 지금 위치 찾기를 진행할까요?`
+      );
+      if (!ok) {
+        store.addMany(toImport);
+        listPage = 1;
+        renderAll();
+        statusEl.textContent =
+          `✅ ${toImport.length}명을 가져왔습니다 (위치 찾기는 건너뜀).\n` +
+          `목록에는 모두 보이지만, 좌표가 없는 ${needGeo.length}명은 지도에 표시되지 않습니다.`;
+        return;
+      }
+    }
+
     let done = 0;
     const failed = [];
     for (const f of needGeo) {
@@ -410,13 +442,21 @@ document.getElementById("file-input").addEventListener("change", async (e) => {
     listPage = 1;
     renderAll();
 
-    let msg = `✅ ${toImport.length}명을 가져왔습니다.`;
-    if (failed.length)
-      msg += `\n⚠️ 위치를 찾지 못한 지인: ${failed.join(", ")}\n목록에서 눌러 주소를 수정해 주세요.`;
+    // 몇 명이 실제로 지도에 떴는지까지 알려준다. 그래야 "올렸는데 아무것도 안 보인다"를
+    // 바로 알아챌 수 있다.
+    const onMap = toImport.filter((f) => f.lat != null).length;
+    let msg = `✅ ${toImport.length}명을 가져왔습니다. 이 중 ${onMap}명이 지도에 표시됩니다.`;
+    if (noAddress) msg += `\n· 주소가 비어 있는 지인 ${noAddress}명은 지도에 표시되지 않습니다.`;
+    if (failed.length) {
+      const head = failed.slice(0, 5).join(", ");
+      msg += `\n· 주소는 있지만 위치를 찾지 못한 지인 ${failed.length}명: ${head}${
+        failed.length > 5 ? " 외" : ""
+      }\n  목록에서 눌러 주소를 수정할 수 있습니다.`;
+    }
     statusEl.textContent = msg;
     setTimeout(() => {
-      if (statusEl.textContent === msg && !failed.length) statusEl.hidden = true;
-    }, 6000);
+      if (statusEl.textContent === msg && !failed.length && !noAddress) statusEl.hidden = true;
+    }, 8000);
 
     // 가져온 마커가 모두 보이도록 지도 범위 조정
     mapView.fitToFriends(toImport);
